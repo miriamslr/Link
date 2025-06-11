@@ -1,0 +1,20 @@
+# Node modules
+node_modules/
+
+# Logs
+*.log
+
+# Chaves e credenciais
+serviceAccountKey.json
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Ambiente
+.env
+
+# Outros arquivos temporários
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log* 

@@ -1,0 +1,40 @@
+// --- EVENT LISTENERS ---
+document.getElementById('abrirPainelFooter').addEventListener('click', abrirPainelConfig);
+painel.fechar.addEventListener('click', () => painel.container.classList.remove('aberto'));
+painel.salvar.addEventListener('click', salvarAlteracoesDoPainel);
+painel.btnCancelarSenha.addEventListener('click', fecharModalSenha);
+painel.btnConfirmarSenha.addEventListener('click', () => {
+    const email = painel.inputEmail.value;
+    const senha = painel.inputSenha.value;
+    if (!email || !senha) {
+        painel.mensagemErroSenha.textContent = 'Por favor, preencha todos os campos.';
+        return;
+    }
+    fazerLogin(email, senha);
+});
+
+// Corrigir event listener do botão de registro
+const btnRegistrar = document.getElementById('btnRegistrar');
+if (btnRegistrar) {
+    btnRegistrar.addEventListener('click', () => {
+        const email = painel.inputEmail.value;
+        const senha = painel.inputSenha.value;
+        if (!email || !senha) {
+            painel.mensagemErroSenha.textContent = 'Por favor, preencha todos os campos.';
+            return;
+        }
+        fazerRegistro(email, senha);
+    });
+}
+
+const btnRecuperarSenha = document.getElementById('btnRecuperarSenha');
+if (btnRecuperarSenha) {
+    btnRecuperarSenha.addEventListener('click', () => {
+        const email = painel.inputEmail.value;
+        if (!email) {
+            painel.mensagemErroSenha.textContent = 'Por favor, digite seu email para recuperar a senha.';
+            return;
+        }
+        recuperarSenha(email);
+    });
+} 

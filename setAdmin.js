@@ -1,24 +1,17 @@
 const admin = require('firebase-admin');
-const readline = require('readline');
 const serviceAccount = require('./serviceAccountKey.json');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
+// Defina o UID do usuário admin aqui:
+const uid = 'Ih8VGV7krVfajCwTzAXi7fcFP2t1';
 
-rl.question('Digite o UID do usuário que será admin: ', function(uid) {
-  admin.auth().setCustomUserClaims(uid, { admin: true })
-    .then(() => {
-      console.log(`Usuário ${uid} agora é admin!`);
-      rl.close();
-    })
-    .catch((error) => {
-      console.error('Erro ao definir admin:', error);
-      rl.close();
-    });
-}); 
+admin.auth().setCustomUserClaims(uid, { admin: true })
+  .then(() => {
+    console.log(`Usuário ${uid} agora é admin!`);
+  })
+  .catch((error) => {
+    console.error('Erro ao definir admin:', error);
+  }); 
