@@ -198,6 +198,23 @@
         .opcoes-login .link-footer:hover {
             color: var(--cor-texto-principal);
         }
+        .btn-logout {
+            display: block;
+            width: 100%;
+            background: var(--cor-erro);
+            color: white;
+            margin-top: 1rem;
+            padding: 1rem;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .btn-logout:hover {
+            background-color: #e74c3c;
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
@@ -269,6 +286,7 @@
         <section class="campo"><h3>Links</h3><div id="editorLinksContainer"></div><button class="btn btn-adicionar" id="btnAdicionarLink">Adicionar Novo Link</button></section>
         <div id="painelStatus" class="painel-status"></div>
         <button class="btn btn-salvar" id="btnSalvar">Salvar Alterações</button>
+        <button class="btn btn-logout" id="btnLogoutPainel">Sair da Conta</button>
     </div>
     
     <div class="modal-overlay" id="modalSenhaOverlay">
@@ -351,6 +369,9 @@
             { id: Date.now() + 2, url: '#', imagem: 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?q=80&w=1974&auto=format&fit=crop', titulo: 'Redes Sociais', subtitulo: 'Me acompanhe no dia a dia' },
         ]
     };
+
+    // Lista de administradores autorizados
+    const ADMINS = ['miriamslr92@gmail.com'];
 
     // --- LÓGICA DE DADOS COM FIREBASE ---
     async function inicializarFirebase() {
@@ -450,6 +471,7 @@
 
     // --- LÓGICA DE AUTENTICAÇÃO ---
     function atualizarInterfaceAutenticacao(user) {
+        console.log('Estado de autenticação atualizado:', user ? 'Logado' : 'Deslogado');
         const footer = document.querySelector('footer p');
         if (user) {
             footer.innerHTML = `Desenvolvido por você ✨ • <span id="abrirPainelFooter" class="link-footer">Ajustes</span> • <span id="btnLogout" class="link-footer">Sair</span>`;
@@ -457,6 +479,8 @@
         } else {
             footer.innerHTML = `Desenvolvido por você ✨ • <span id="abrirPainelFooter" class="link-footer">Ajustes</span>`;
         }
+        // Re-adicionar o event listener para o botão de abrir painel
+        document.getElementById('abrirPainelFooter').addEventListener('click', abrirPainelConfig);
     }
 
     async function fazerLogin(email, senha) {
@@ -527,6 +551,7 @@
 
     // --- LÓGICA DO PAINEL DE EDIÇÃO E MODAL ---
     function abrirModalSenha() {
+        console.log('Abrindo modal de senha');
         painel.mensagemErroSenha.textContent = '';
         painel.inputEmail.value = '';
         painel.inputSenha.value = '';
@@ -535,15 +560,28 @@
     }
 
     function fecharModalSenha() {
+        console.log('Fechando modal de senha');
         painel.modalSenhaOverlay.classList.remove('visivel');
     }
 
-    function abrirPainelConfig() {
+    async function abrirPainelConfig() {
+        console.log('Tentando abrir painel de configuração');
+        console.log('Estado de autenticação:', auth.currentUser ? 'Logado' : 'Deslogado');
+        
         if (!auth.currentUser) {
+            console.log('Usuário não autenticado, abrindo modal de senha');
             abrirModalSenha();
             return;
         }
+        // Verificação de custom claim admin
+        const token = await auth.currentUser.getIdTokenResult();
+        if (!token.claims.admin) {
+            alert('Acesso restrito apenas para administradores.');
+            fazerLogout();
+            return;
+        }
 
+        console.log('Usuário autenticado e é admin, abrindo painel');
         const configCompleta = {
             cores: {
                 fundo1: configAtual?.cores?.fundo1 || '#0f2027',
@@ -654,13 +692,25 @@
     }
 
     // --- EVENT LISTENERS ---
-    document.getElementById('abrirPainelFooter').addEventListener('click', abrirPainelConfig);
-    painel.fechar.addEventListener('click', () => painel.container.classList.remove('aberto'));
+    // Remover event listeners antigos
+    const abrirPainelFooter = document.getElementById('abrirPainelFooter');
+    if (abrirPainelFooter) {
+        const newAbrirPainelFooter = abrirPainelFooter.cloneNode(true);
+        abrirPainelFooter.parentNode.replaceChild(newAbrirPainelFooter, abrirPainelFooter);
+        newAbrirPainelFooter.addEventListener('click', abrirPainelConfig);
+    }
+
+    painel.fechar.addEventListener('click', () => {
+        console.log('Fechando painel');
+        painel.container.classList.remove('aberto');
+    });
+
     painel.salvar.addEventListener('click', salvarAlteracoesDoPainel);
     painel.btnCancelarSenha.addEventListener('click', fecharModalSenha);
     painel.btnConfirmarSenha.addEventListener('click', () => {
         const email = painel.inputEmail.value;
         const senha = painel.inputSenha.value;
+        console.log('Tentando fazer login com:', email);
         fazerLogin(email, senha);
     });
 
@@ -744,6 +794,20 @@
             comprimirEConverterParaBase64(e.target.files[0], base64 => { inputUrl.value = base64; });
         }
     });
+
+    // Adicionar evento de logout para o botão no painel
+    const btnLogoutPainel = document.getElementById('btnLogoutPainel');
+    if (btnLogoutPainel) {
+        btnLogoutPainel.addEventListener('click', async () => {
+            try {
+                await fazerLogout();
+                alert('Logout realizado com sucesso!');
+            } catch (error) {
+                console.error('Erro ao fazer logout:', error);
+                alert('Erro ao fazer logout. Tente novamente.');
+            }
+        });
+    }
 
     // --- FUNÇÕES UTILITÁRIAS ---
     function hexToRgba(hex, alpha) {
