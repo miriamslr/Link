@@ -355,9 +355,6 @@
     // --- LÓGICA DE DADOS COM FIREBASE ---
     async function inicializarFirebase() {
         // --- ADICIONE SUAS CREDENCIAIS DO FIREBASE AQUI ---
-        // 1. Visite https://firebase.google.com/ e crie um novo projeto.
-        // 2. Vá para as configurações do projeto e crie um novo aplicativo da web.
-        // 3. Copie o objeto de configuração do Firebase e cole aqui.
         const firebaseConfig = {
             apiKey: "AIzaSyC5UjgqWf2zdQjwj8a64qmonup8tPNPHQI",
             authDomain: "fir-5ae93.firebaseapp.com",
@@ -368,19 +365,40 @@
             measurementId: "G-RD7TB3Q6GY"
         };
         
-        // --- NÃO ALTERE DAQUI PARA BAIXO ---
-        const appId = firebaseConfig.appId || 'default-app-id';
-        const authToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        try {
+            // Inicializar o Firebase
+            const app = initializeApp(firebaseConfig);
+            const analytics = getAnalytics(app);
+            db = getFirestore(app);
+            auth = getAuth(app);
 
-        if (!firebaseConfig || firebaseConfig.apiKey === "COLE_SUA_API_KEY_AQUI") {
-            console.error("ERRO: Configuração do Firebase não encontrada ou não preenchida.");
-            console.error("Por favor, adicione suas credenciais do Firebase no arquivo link-canal-dr.html para continuar.");
+            // Configurar o observador de autenticação
+            onAuthStateChanged(auth, (user) => {
+                atualizarInterfaceAutenticacao(user);
+            });
+
+            // Carregar dados do Firestore
+            const configDocRef = doc(db, "linkPage", "config");
+            onSnapshot(configDocRef, (doc) => {
+                if (doc.exists()) {
+                    configAtual = doc.data().data;
+                } else {
+                    console.log("Documento não encontrado, usando configuração padrão.");
+                    configAtual = configPadrao;
+                }
+                aplicarConfiguracoes(configAtual);
+                elementosPagina.loadingOverlay.style.opacity = '0';
+                setTimeout(() => { elementosPagina.loadingOverlay.style.display = 'none'; }, 500);
+            });
+
+        } catch (error) {
+            console.error("Erro ao inicializar Firebase:", error);
             
             // Cria um alerta visual para o usuário
             const alerta = document.createElement('div');
             alerta.innerHTML = `
-                <strong style="display: block; margin-bottom: 10px;">CONFIGURAÇÃO NECESSÁRIA</strong>
-                As credenciais do Firebase não foram encontradas. Edite o arquivo <code>link-canal-dr.html</code> e adicione sua configuração do Firebase para que o aplicativo funcione corretamente.
+                <strong style="display: block; margin-bottom: 10px;">ERRO DE CONFIGURAÇÃO</strong>
+                Ocorreu um erro ao inicializar o Firebase. Por favor, verifique as credenciais e tente novamente.
             `;
             alerta.style.cssText = `
                 position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
@@ -393,37 +411,7 @@
             // Carrega a página com os dados padrão para que não fique vazia
             elementosPagina.loadingOverlay.style.display = 'none';
             aplicarConfiguracoes(configPadrao);
-            return;
         }
-
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-        db = getFirestore(app);
-        auth = getAuth(app);
-
-        try {
-            if (authToken) {
-                await signInWithCustomToken(auth, authToken);
-            } else {
-                await signInAnonymously(auth);
-            }
-        } catch (error) {
-            console.error("Erro na autenticação:", error);
-        }
-
-        const configDocRef = doc(db, "linkPage", "config");
-        
-        onSnapshot(configDocRef, (doc) => {
-            if (doc.exists()) {
-                configAtual = doc.data().data;
-            } else {
-                console.log("Documento não encontrado, usando configuração padrão.");
-                configAtual = configPadrao;
-            }
-            aplicarConfiguracoes(configAtual);
-            elementosPagina.loadingOverlay.style.opacity = '0';
-            setTimeout(() => { elementosPagina.loadingOverlay.style.display = 'none'; }, 500);
-        });
     }
 
     async function salvarConfiguracoes(novaConfig) {
@@ -709,11 +697,6 @@
             const senha = painel.inputSenha.value;
             fazerLogin(email, senha);
         }
-    });
-
-    // Observador de estado de autenticação
-    onAuthStateChanged(auth, (user) => {
-        atualizarInterfaceAutenticacao(user);
     });
 
     // Adicionar preview em tempo real para alterações de cores
