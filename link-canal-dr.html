@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meus Links | Seu Nome</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <!-- Seletor de cor moderno Pickr -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
+
+    <style>
+        :root {
+            --cor-fundo-gradiente-inicio: #0f2027;
+            --cor-fundo-gradiente-meio: #203a43;
+            --cor-fundo-gradiente-fim: #2c5364;
+            --cor-texto-principal: #ffffff;
+            --cor-texto-secundario: #e0e0e0;
+            --cor-card: rgba(255, 255, 255, 0.08);
+            --cor-card-hover: rgba(255, 255, 255, 0.15);
+            --cor-borda-perfil: #ffffff;
+            --cor-sucesso: #27ae60;
+            --cor-erro: #c0392b;
+            --cor-aviso: #f39c12;
+            --cor-info: #3498db;
+        }
+
+        /* --- Estilos Globais --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--cor-fundo-gradiente-inicio), var(--cor-fundo-gradiente-meio), var(--cor-fundo-gradiente-fim));
+            color: var(--cor-texto-principal);
+            display: flex; justify-content: center; align-items: flex-start;
+            min-height: 100vh; padding: 2rem 1rem; transition: background 0.5s ease;
+        }
+        
+        /* --- Animação de Carregamento Inicial --- */
+        #loadingOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--cor-fundo-gradiente-inicio); z-index: 9999;
+            display: flex; justify-content: center; align-items: center;
+            transition: opacity 0.5s ease;
+        }
+        .spinner {
+            width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.3);
+            border-top-color: var(--cor-texto-principal); border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* --- Componentes da Página Principal --- */
+        .container { max-width: 680px; width: 100%; text-align: center; padding: 1rem; }
+        .perfil { margin-bottom: 2.5rem; }
+        .foto-perfil {
+            width: 130px; height: 130px; border-radius: 50%; border: 4px solid var(--cor-borda-perfil);
+            object-fit: cover; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            transition: transform 0.4s ease, border-color 0.5s ease;
+        }
+        .foto-perfil:hover { transform: scale(1.1) rotate(5deg); }
+        .titulo-perfil { font-weight: 600; font-size: 1.8rem; margin-top: 1.2rem; color: var(--cor-texto-principal); }
+        .subtitulo-perfil { font-weight: 300; color: var(--cor-texto-secundario); font-size: 1rem; }
+        
+        .links-container { display: flex; flex-direction: column; }
+        .link-card {
+            display: flex; align-items: center; background: var(--cor-card); backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px; padding: 1rem 1.2rem; margin-bottom: 1.2rem; text-decoration: none;
+            color: var(--cor-texto-principal); transition: transform 0.3s ease, background-color 0.3s ease;
+            opacity: 0; transform: translateY(25px); animation: emerge 0.6s ease-out forwards;
+        }
+        .link-card:hover { transform: scale(1.05); background-color: var(--cor-card-hover); }
+        @keyframes emerge { to { opacity: 1; transform: translateY(0); } }
+        
+        .card-imagem { width: 65px; height: 65px; border-radius: 12px; object-fit: cover; margin-right: 1.2rem; flex-shrink: 0; }
+        .card-texto { flex-grow: 1; text-align: left; }
+        .card-titulo { font-size: 1.15rem; font-weight: 600; line-height: 1.3; color: var(--cor-texto-principal); }
+        .card-subtitulo { font-size: 0.9rem; font-weight: 300; color: var(--cor-texto-secundario); }
+        .card-seta { font-size: 1.6rem; transition: transform 0.3s ease; color: var(--cor-texto-principal); }
+        .link-card:hover .card-seta { transform: translateX(8px); }
+
+        footer { margin-top: 3rem; padding-bottom: 5rem; font-size: 0.85rem; color: var(--cor-texto-secundario); opacity: 0.7; }
+        .link-footer { cursor: pointer; text-decoration: none; border-bottom: 1px dotted var(--cor-texto-secundario); transition: color 0.3s ease; }
+        .link-footer:hover { color: var(--cor-texto-principal); }
+
+        .painel-config {
+            position: fixed; top: 0; right: -100%; width: 100%; max-width: 400px; height: 100%;
+            background-color: #1a1a1d; box-shadow: -5px 0 20px rgba(0,0,0,0.3); z-index: 1000;
+            transition: right 0.4s ease-in-out; padding: 2rem; overflow-y: auto; color: #fff;
+        }
+        .painel-config.aberto { right: 0; }
+        .painel-config h2, .painel-config h3 { margin-bottom: 1.5rem; border-bottom: 1px solid #444; padding-bottom: 0.5rem; font-weight: 600; }
+        .painel-config .campo { margin-bottom: 1.2rem; }
+        .painel-config label { display: block; margin-bottom: 0.5rem; font-weight: 400; color: #ccc; }
+        .painel-config input[type="text"], .painel-config input[type="url"], .painel-config input[type="password"] {
+            width: 100%; padding: 0.7rem; border-radius: 8px; border: 1px solid #555;
+            background-color: #333; color: #fff; font-family: 'Poppins', sans-serif;
+        }
+        .cores-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; }
+        .color-picker-wrapper { 
+            position: relative; 
+            width: 100%; 
+            height: 40px; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            margin-bottom: 0.5rem; 
+            border: 1px solid #444;
+            cursor: pointer;
+        }
+        .color-picker-wrapper .color-preview {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: rgba(255,255,255,0.8);
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        /* Escondendo o input de cor padrão mas mantendo para compatibilidade */
+        .painel-config input[type="color"] { 
+            width: 0; 
+            height: 0; 
+            padding: 0; 
+            opacity: 0; 
+            position: absolute;
+        }
+        /* Estilos específicos do Pickr */
+        .pickr .pcr-button {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+        }
+        .editor-link { background-color: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #444; }
+        .editor-link-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        
+        .btn { border: none; padding: 0.8rem 1.2rem; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: background-color 0.2s, transform 0.2s; }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-remover { background: var(--cor-erro); color: white; padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+        .btn-adicionar { display: block; width: 100%; background: var(--cor-sucesso); color: white; margin-top: 1rem; }
+        .btn-salvar { display: block; width: 100%; background: var(--cor-info); color: white; margin-top: 1rem; padding: 1rem; font-size: 1.1rem; }
+        .btn-upload { background-color: #555; color: #fff; padding: 0.5rem; font-size: 0.8rem; margin-top: 0.5rem; text-align: center; }
+        input[type="file"] { display: none; }
+        .btn-fechar-painel { position: absolute; top: 20px; right: 20px; background: none; border: none; color: #fff; font-size: 1.8rem; cursor: pointer; }
+        .painel-status { text-align: center; padding: 0.7rem; border-radius: 8px; margin-top: 1.5rem; font-weight: 500; display: none; }
+        .painel-status.erro { background-color: var(--cor-erro); color: white; display: block; }
+        
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+            display: flex; justify-content: center; align-items: center; z-index: 2000;
+            opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.visivel { opacity: 1; visibility: visible; }
+        .modal-conteudo { background: #2c3e50; padding: 2rem; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.4); width: 90%; max-width: 380px; text-align: center; transform: scale(0.9); transition: transform 0.3s ease; }
+        .modal-overlay.visivel .modal-conteudo { transform: scale(1); }
+        .modal-conteudo h3 { margin-bottom: 0.5rem; font-weight: 600; }
+        .modal-conteudo p { margin-bottom: 1.5rem; color: var(--cor-texto-secundario); }
+        .modal-conteudo input[type="password"] { font-size: 1rem; text-align: center; }
+        .mensagem-erro-senha { color: var(--cor-erro); min-height: 1.2em; margin-top: 0.5rem !important; font-size: 0.9rem; font-weight: 600; }
+        .modal-botoes { display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem; }
+        .btn-cancelar { background: #7f8c8d; color: white; }
+        .btn-confirmar { background: var(--cor-sucesso); color: white; }
+        .campo-login {
+            margin: 1.5rem 0;
+        }
+        .input-login {
+            width: 100%;
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            font-size: 1rem;
+        }
+        .input-login:focus {
+            outline: none;
+            border-color: var(--cor-info);
+        }
+        .opcoes-login {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        .opcoes-login .link-footer {
+            cursor: pointer;
+            color: var(--cor-texto-secundario);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        .opcoes-login .link-footer:hover {
+            color: var(--cor-texto-principal);
+        }
+    </style>
+</head>
+<body>
+    <div id="loadingOverlay"><div class="spinner"></div></div>
+
+    <div class="container" id="containerPrincipal">
+        <header class="perfil">
+            <img src="" alt="Foto de Perfil" class="foto-perfil" id="fotoPerfil">
+            <h1 class="titulo-perfil" id="tituloPerfil"></h1>
+            <p class="subtitulo-perfil" id="subtituloPerfil"></p>
+        </header>
+        <main class="links-container" id="linksContainer"></main>
+        <footer>
+            <p>Desenvolvido por você ✨ • <span id="abrirPainelFooter" class="link-footer">Ajustes</span></p>
+        </footer>
+    </div>
+    
+    <div class="painel-config" id="painelConfig">
+        <button class="btn-fechar-painel" id="fecharPainel">&times;</button>
+        <h2>Configurações</h2>
+        <section class="campo">
+            <h3>Aparência</h3>
+            <div class="cores-container">
+                <div>
+                    <label>Fundo 1</label>
+                    <div class="color-picker-wrapper" id="picker-fundo1">
+                        <div class="color-preview"></div>
+                    </div>
+                    <input type="color" id="corFundo1">
+                </div>
+                <div>
+                    <label>Fundo 2</label>
+                    <div class="color-picker-wrapper" id="picker-fundo2">
+                        <div class="color-preview"></div>
+                    </div>
+                    <input type="color" id="corFundo2">
+                </div>
+                <div>
+                    <label>Fundo 3</label>
+                    <div class="color-picker-wrapper" id="picker-fundo3">
+                        <div class="color-preview"></div>
+                    </div>
+                    <input type="color" id="corFundo3">
+                </div>
+                <div>
+                    <label>Texto 1</label>
+                    <div class="color-picker-wrapper" id="picker-texto1">
+                        <div class="color-preview"></div>
+                    </div>
+                    <input type="color" id="corTextoPrincipal">
+                </div>
+                <div>
+                    <label>Texto 2</label>
+                    <div class="color-picker-wrapper" id="picker-texto2">
+                        <div class="color-preview"></div>
+                    </div>
+                    <input type="color" id="corTextoSecundario">
+                </div>
+                <div>
+                    <label>Card</label>
+                    <div class="color-picker-wrapper" id="picker-card">
+                        <div class="color-preview"></div>
+                    </div>
+                    <input type="color" id="corCard">
+                </div>
+            </div>
+        </section>
+        <section class="campo"><h3>Perfil</h3><label for="urlFotoPerfil">URL da Foto de Perfil</label><input type="url" id="urlFotoPerfil" placeholder="https://exemplo.com/sua-foto.jpg"><label for="uploadFotoPerfil" class="btn btn-upload">Carregar Imagem</label><input type="file" id="uploadFotoPerfil" accept="image/*"><label for="inputTituloPerfil" style="margin-top: 1rem;">Nome / @Usuário</label><input type="text" id="inputTituloPerfil" placeholder="@seuusuario"><label for="inputSubtituloPerfil" style="margin-top: 1rem;">Bio / Descrição</label><input type="text" id="inputSubtituloPerfil" placeholder="Sua descrição aqui"></section>
+        <section class="campo"><h3>Links</h3><div id="editorLinksContainer"></div><button class="btn btn-adicionar" id="btnAdicionarLink">Adicionar Novo Link</button></section>
+        <div id="painelStatus" class="painel-status"></div>
+        <button class="btn btn-salvar" id="btnSalvar">Salvar Alterações</button>
+    </div>
+    
+    <div class="modal-overlay" id="modalSenhaOverlay">
+        <div class="modal-conteudo">
+            <h3>Acesso Restrito</h3>
+            <p>Por favor, faça login para editar.</p>
+            <div class="campo-login">
+                <input type="email" id="inputEmail" placeholder="Email" class="input-login">
+                <input type="password" id="inputSenha" placeholder="Senha" class="input-login">
+                <p class="mensagem-erro-senha" id="mensagemErroSenha"></p>
+                <div class="opcoes-login">
+                    <span id="btnRecuperarSenha" class="link-footer">Esqueceu a senha?</span>
+                    <span id="btnRegistrar" class="link-footer">Criar conta</span>
+                </div>
+            </div>
+            <div class="modal-botoes">
+                <button class="btn btn-cancelar" id="btnCancelarSenha">Cancelar</button>
+                <button class="btn btn-confirmar" id="btnConfirmarSenha">Entrar</button>
+            </div>
+        </div>
+    </div>
+
+<script type="module">
+    // Importações do Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { 
+        getAuth, 
+        signInWithEmailAndPassword,
+        createUserWithEmailAndPassword,
+        sendPasswordResetEmail,
+        signOut,
+        onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, onSnapshot, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+
+    // --- CONSTANTES E CONFIGURAÇÃO INICIAL ---
+    const root = document.documentElement;
+    const elementosPagina = {
+        loadingOverlay: document.getElementById('loadingOverlay'),
+        fotoPerfil: document.getElementById('fotoPerfil'),
+        tituloPerfil: document.getElementById('tituloPerfil'),
+        subtituloPerfil: document.getElementById('subtituloPerfil'),
+        linksContainer: document.getElementById('linksContainer'),
+    };
+    const painel = {
+        container: document.getElementById('painelConfig'),
+        fechar: document.getElementById('fecharPainel'),
+        salvar: document.getElementById('btnSalvar'),
+        status: document.getElementById('painelStatus'),
+        modalSenhaOverlay: document.getElementById('modalSenhaOverlay'),
+        inputEmail: document.getElementById('inputEmail'),
+        inputSenha: document.getElementById('inputSenha'),
+        btnConfirmarSenha: document.getElementById('btnConfirmarSenha'),
+        btnCancelarSenha: document.getElementById('btnCancelarSenha'),
+        mensagemErroSenha: document.getElementById('mensagemErroSenha'),
+        corFundo1: document.getElementById('corFundo1'), 
+        corFundo2: document.getElementById('corFundo2'), 
+        corFundo3: document.getElementById('corFundo3'),
+        corTextoPrincipal: document.getElementById('corTextoPrincipal'), 
+        corTextoSecundario: document.getElementById('corTextoSecundario'), 
+        corCard: document.getElementById('corCard'),
+        urlFotoPerfil: document.getElementById('urlFotoPerfil'), 
+        uploadFotoPerfil: document.getElementById('uploadFotoPerfil'),
+        inputTituloPerfil: document.getElementById('inputTituloPerfil'), 
+        inputSubtituloPerfil: document.getElementById('inputSubtituloPerfil'),
+        editorLinksContainer: document.getElementById('editorLinksContainer'), 
+        btnAdicionarLink: document.getElementById('btnAdicionarLink'),
+    };
+    
+    let db, auth;
+    let configAtual = {};
+    let configParaSalvar = {};
+    
+    const configPadrao = {
+        cores: { fundo1: '#0f2027', fundo2: '#203a43', fundo3: '#2c5364', texto1: '#ffffff', texto2: '#e0e0e0', card: 'rgba(255, 255, 255, 0.08)' },
+        perfil: { foto: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=1780&auto=format&fit=crop', titulo: '@seuusuario', subtitulo: 'Expert em Design | Apaixonado por Café' },
+        links: [
+            { id: Date.now() + 1, url: '#', imagem: 'https://images.unsplash.com/photo-1555949963-ff98c8708533?q=80&w=2070&auto=format&fit=crop', titulo: 'Meu Portfólio', subtitulo: 'Confira meus últimos projetos' },
+            { id: Date.now() + 2, url: '#', imagem: 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?q=80&w=1974&auto=format&fit=crop', titulo: 'Redes Sociais', subtitulo: 'Me acompanhe no dia a dia' },
+        ]
+    };
+
+    // --- LÓGICA DE DADOS COM FIREBASE ---
+    async function inicializarFirebase() {
+        // --- ADICIONE SUAS CREDENCIAIS DO FIREBASE AQUI ---
+        // 1. Visite https://firebase.google.com/ e crie um novo projeto.
+        // 2. Vá para as configurações do projeto e crie um novo aplicativo da web.
+        // 3. Copie o objeto de configuração do Firebase e cole aqui.
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5UjgqWf2zdQjwj8a64qmonup8tPNPHQI",
+            authDomain: "fir-5ae93.firebaseapp.com",
+            projectId: "fir-5ae93",
+            storageBucket: "fir-5ae93.firebasestorage.app",
+            messagingSenderId: "42510319273",
+            appId: "1:42510319273:web:78e84a5f65231516ef73b8",
+            measurementId: "G-RD7TB3Q6GY"
+        };
+        
+        // --- NÃO ALTERE DAQUI PARA BAIXO ---
+        const appId = firebaseConfig.appId || 'default-app-id';
+        const authToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        if (!firebaseConfig || firebaseConfig.apiKey === "COLE_SUA_API_KEY_AQUI") {
+            console.error("ERRO: Configuração do Firebase não encontrada ou não preenchida.");
+            console.error("Por favor, adicione suas credenciais do Firebase no arquivo link-canal-dr.html para continuar.");
+            
+            // Cria um alerta visual para o usuário
+            const alerta = document.createElement('div');
+            alerta.innerHTML = `
+                <strong style="display: block; margin-bottom: 10px;">CONFIGURAÇÃO NECESSÁRIA</strong>
+                As credenciais do Firebase não foram encontradas. Edite o arquivo <code>link-canal-dr.html</code> e adicione sua configuração do Firebase para que o aplicativo funcione corretamente.
+            `;
+            alerta.style.cssText = `
+                position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+                background-color: var(--cor-erro); color: white; padding: 20px;
+                border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+                z-index: 10000; text-align: center; max-width: 90%; font-family: 'Poppins', sans-serif;
+            `;
+            document.body.appendChild(alerta);
+
+            // Carrega a página com os dados padrão para que não fique vazia
+            elementosPagina.loadingOverlay.style.display = 'none';
+            aplicarConfiguracoes(configPadrao);
+            return;
+        }
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        db = getFirestore(app);
+        auth = getAuth(app);
+
+        try {
+            if (authToken) {
+                await signInWithCustomToken(auth, authToken);
+            } else {
+                await signInAnonymously(auth);
+            }
+        } catch (error) {
+            console.error("Erro na autenticação:", error);
+        }
+
+        const configDocRef = doc(db, "linkPage", "config");
+        
+        onSnapshot(configDocRef, (doc) => {
+            if (doc.exists()) {
+                configAtual = doc.data().data;
+            } else {
+                console.log("Documento não encontrado, usando configuração padrão.");
+                configAtual = configPadrao;
+            }
+            aplicarConfiguracoes(configAtual);
+            elementosPagina.loadingOverlay.style.opacity = '0';
+            setTimeout(() => { elementosPagina.loadingOverlay.style.display = 'none'; }, 500);
+        });
+    }
+
+    async function salvarConfiguracoes(novaConfig) {
+        if (!db) {
+            console.error("Banco de dados não inicializado.");
+            return false;
+        }
+        const configDocRef = doc(db, "linkPage", "config");
+        try {
+            await setDoc(configDocRef, { data: novaConfig, updatedAt: serverTimestamp() });
+            return true;
+        } catch (error) {
+            console.error("Erro ao salvar no Firestore:", error);
+            return false;
+        }
+    }
+    
+    // --- RENDERIZAÇÃO DA PÁGINA ---
+    function aplicarConfiguracoes(config) {
+        root.style.setProperty('--cor-fundo-gradiente-inicio', config.cores.fundo1); root.style.setProperty('--cor-fundo-gradiente-meio', config.cores.fundo2); root.style.setProperty('--cor-fundo-gradiente-fim', config.cores.fundo3);
+        root.style.setProperty('--cor-texto-principal', config.cores.texto1); root.style.setProperty('--cor-texto-secundario', config.cores.texto2);
+        root.style.setProperty('--cor-card', config.cores.card); root.style.setProperty('--cor-card-hover', hexToRgba(rgbaToHex(config.cores.card), 0.15));
+        elementosPagina.fotoPerfil.src = config.perfil.foto; elementosPagina.tituloPerfil.textContent = config.perfil.titulo; elementosPagina.subtituloPerfil.textContent = config.perfil.subtitulo;
+        renderizarLinksPagina(config.links);
+    }
+    
+    function renderizarLinksPagina(links) {
+        elementosPagina.linksContainer.innerHTML = '';
+        links.forEach((link, index) => {
+            const card = document.createElement('a');
+            card.href = link.url; card.target = '_blank'; card.className = 'link-card'; card.style.animationDelay = `${index * 0.1}s`;
+            card.innerHTML = `<img src="${link.imagem}" alt="${link.titulo}" class="card-imagem"><div class="card-texto"><h2 class="card-titulo">${link.titulo}</h2><p class="card-subtitulo">${link.subtitulo}</p></div><i class="fa-solid fa-arrow-right card-seta"></i>`;
+            elementosPagina.linksContainer.appendChild(card);
+        });
+    }
+
+    // --- LÓGICA DE AUTENTICAÇÃO ---
+    function atualizarInterfaceAutenticacao(user) {
+        const footer = document.querySelector('footer p');
+        if (user) {
+            footer.innerHTML = `Desenvolvido por você ✨ • <span id="abrirPainelFooter" class="link-footer">Ajustes</span> • <span id="btnLogout" class="link-footer">Sair</span>`;
+            document.getElementById('btnLogout').addEventListener('click', fazerLogout);
+        } else {
+            footer.innerHTML = `Desenvolvido por você ✨ • <span id="abrirPainelFooter" class="link-footer">Ajustes</span>`;
+        }
+    }
+
+    async function fazerLogin(email, senha) {
+        try {
+            await signInWithEmailAndPassword(auth, email, senha);
+            fecharModalSenha();
+            abrirPainelConfig();
+        } catch (error) {
+            let mensagem = 'Erro ao fazer login. ';
+            switch (error.code) {
+                case 'auth/user-not-found':
+                case 'auth/wrong-password':
+                    mensagem += 'Email ou senha incorretos.';
+                    break;
+                case 'auth/too-many-requests':
+                    mensagem += 'Muitas tentativas. Tente novamente mais tarde.';
+                    break;
+                default:
+                    mensagem += 'Tente novamente.';
+            }
+            painel.mensagemErroSenha.textContent = mensagem;
+        }
+    }
+
+    async function fazerRegistro(email, senha) {
+        try {
+            await createUserWithEmailAndPassword(auth, email, senha);
+            alert('Conta criada com sucesso! Você já está logado.');
+            fecharModalSenha();
+            abrirPainelConfig();
+        } catch (error) {
+            let mensagem = 'Erro ao criar conta. ';
+            switch (error.code) {
+                case 'auth/email-already-in-use':
+                    mensagem += 'Este email já está em uso.';
+                    break;
+                case 'auth/invalid-email':
+                    mensagem += 'Email inválido.';
+                    break;
+                case 'auth/weak-password':
+                    mensagem += 'A senha deve ter pelo menos 6 caracteres.';
+                    break;
+                default:
+                    mensagem += 'Tente novamente.';
+            }
+            painel.mensagemErroSenha.textContent = mensagem;
+        }
+    }
+
+    async function fazerLogout() {
+        try {
+            await signOut(auth);
+            painel.container.classList.remove('aberto');
+        } catch (error) {
+            console.error('Erro ao fazer logout:', error);
+        }
+    }
+
+    async function recuperarSenha(email) {
+        try {
+            await sendPasswordResetEmail(auth, email);
+            alert('Email de recuperação enviado! Verifique sua caixa de entrada.');
+        } catch (error) {
+            console.error('Erro ao enviar email de recuperação:', error);
+            alert('Erro ao enviar email de recuperação. Verifique se o email está correto.');
+        }
+    }
+
+    // --- LÓGICA DO PAINEL DE EDIÇÃO E MODAL ---
+    function abrirModalSenha() {
+        painel.mensagemErroSenha.textContent = '';
+        painel.inputEmail.value = '';
+        painel.inputSenha.value = '';
+        painel.modalSenhaOverlay.classList.add('visivel');
+        painel.inputEmail.focus();
+    }
+
+    function fecharModalSenha() {
+        painel.modalSenhaOverlay.classList.remove('visivel');
+    }
+
+    function abrirPainelConfig() {
+        if (!auth.currentUser) {
+            abrirModalSenha();
+            return;
+        }
+
+        const configCompleta = {
+            cores: {
+                fundo1: configAtual?.cores?.fundo1 || '#0f2027',
+                fundo2: configAtual?.cores?.fundo2 || '#203a43',
+                fundo3: configAtual?.cores?.fundo3 || '#2c5364',
+                texto1: configAtual?.cores?.texto1 || '#ffffff',
+                texto2: configAtual?.cores?.texto2 || '#e0e0e0',
+                card: configAtual?.cores?.card || 'rgba(255, 255, 255, 0.08)'
+            },
+            perfil: {
+                foto: configAtual?.perfil?.foto || 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=1780&auto=format&fit=crop',
+                titulo: configAtual?.perfil?.titulo || '@seuusuario',
+                subtitulo: configAtual?.perfil?.subtitulo || 'Expert em Design | Apaixonado por Café'
+            },
+            links: configAtual?.links || []
+        };
+        configParaSalvar = JSON.parse(JSON.stringify(configCompleta));
+        preencherPainelComConfig(configParaSalvar);
+        painel.container.classList.add('aberto');
+        
+        setTimeout(inicializarSeletoresDeCor, 300);
+    }
+
+    function preencherPainelComConfig(config) {
+        painel.corFundo1.value = config.cores.fundo1; painel.corFundo2.value = config.cores.fundo2; painel.corFundo3.value = config.cores.fundo3;
+        painel.corTextoPrincipal.value = config.cores.texto1; painel.corTextoSecundario.value = config.cores.texto2;
+        painel.corCard.value = rgbaToHex(config.cores.card);
+        painel.urlFotoPerfil.value = config.perfil.foto; painel.inputTituloPerfil.value = config.perfil.titulo; painel.inputSubtituloPerfil.value = config.perfil.subtitulo;
+        renderizarEditorLinks(config.links);
+        
+        // Atualizar as prévias de cor nos elementos personalizados
+        document.querySelectorAll('.color-picker-wrapper').forEach(wrapper => {
+            const preview = wrapper.querySelector('.color-preview');
+            if (preview) {
+                const inputId = wrapper.id.replace('picker-', 'cor');
+                const input = document.getElementById(inputId === 'corCard' ? 'corCard' : 
+                               inputId === 'cortexto1' ? 'corTextoPrincipal' : 
+                               inputId === 'cortexto2' ? 'corTextoSecundario' : 
+                               inputId);
+                if (input) {
+                    preview.style.backgroundColor = input.value;
+                }
+            }
+        });
+    }
+
+    function renderizarEditorLinks(links) {
+        painel.editorLinksContainer.innerHTML = '';
+        links.forEach(link => {
+            const editor = document.createElement('div');
+            editor.className = 'editor-link'; editor.dataset.id = link.id;
+            editor.innerHTML = `<div class="editor-link-header"><strong>Editando Link</strong><button class="btn btn-remover">Remover</button></div><div class="campo"><label>Título</label><input type="text" class="input-link-titulo" value="${link.titulo}"></div><div class="campo"><label>Subtítulo</label><input type="text" class="input-link-subtitulo" value="${link.subtitulo}"></div><div class="campo"><label>URL do Link</label><input type="url" class="input-link-url" value="${link.url}"></div><div class="campo"><label>URL da Imagem</label><input type="url" class="input-link-imagem" value="${link.imagem}"><label for="upload-link-${link.id}" class="btn btn-upload">Carregar Imagem</label><input type="file" id="upload-link-${link.id}" class="input-link-upload" accept="image/*"></div>`;
+            painel.editorLinksContainer.appendChild(editor);
+        });
+    }
+
+    // Atualiza as cores em tempo real durante a edição
+    function atualizarCoresTempoReal() {
+        root.style.setProperty('--cor-fundo-gradiente-inicio', painel.corFundo1.value);
+        root.style.setProperty('--cor-fundo-gradiente-meio', painel.corFundo2.value);
+        root.style.setProperty('--cor-fundo-gradiente-fim', painel.corFundo3.value);
+        root.style.setProperty('--cor-texto-principal', painel.corTextoPrincipal.value);
+        root.style.setProperty('--cor-texto-secundario', painel.corTextoSecundario.value);
+        
+        // Para o cartão, usar cor com transparência
+        let corCard = painel.corCard.value;
+        if (corCard.startsWith('#')) {
+            corCard = hexToRgba(corCard, 0.08);
+        }
+        root.style.setProperty('--cor-card', corCard);
+        
+        // Para o hover, aumentar a opacidade
+        let corCardHover = painel.corCard.value;
+        if (corCardHover.startsWith('#')) {
+            corCardHover = hexToRgba(corCardHover, 0.15);
+        }
+        root.style.setProperty('--cor-card-hover', corCardHover);
+    }
+    
+    // Atualiza o perfil em tempo real durante a edição
+    function atualizarPerfilTempoReal() {
+        elementosPagina.fotoPerfil.src = painel.urlFotoPerfil.value || configAtual.perfil.foto;
+        elementosPagina.tituloPerfil.textContent = painel.inputTituloPerfil.value;
+        elementosPagina.subtituloPerfil.textContent = painel.inputSubtituloPerfil.value;
+    }
+
+    async function salvarAlteracoesDoPainel() {
+        // Coleta os dados do painel para o objeto temporário
+        configParaSalvar.cores.fundo1 = painel.corFundo1.value; configParaSalvar.cores.fundo2 = painel.corFundo2.value; configParaSalvar.cores.fundo3 = painel.corFundo3.value;
+        configParaSalvar.cores.texto1 = painel.corTextoPrincipal.value; configParaSalvar.cores.texto2 = painel.corTextoSecundario.value; configParaSalvar.cores.card = hexToRgba(painel.corCard.value, 0.08);
+        configParaSalvar.perfil.foto = painel.urlFotoPerfil.value; configParaSalvar.perfil.titulo = painel.inputTituloPerfil.value; configParaSalvar.perfil.subtitulo = painel.inputSubtituloPerfil.value;
+        painel.editorLinksContainer.querySelectorAll('.editor-link').forEach(editor => {
+            const linkId = Number(editor.dataset.id); const link = configParaSalvar.links.find(l => l.id === linkId);
+            if (link) {
+                link.titulo = editor.querySelector('.input-link-titulo').value; link.subtitulo = editor.querySelector('.input-link-subtitulo').value;
+                link.url = editor.querySelector('.input-link-url').value; link.imagem = editor.querySelector('.input-link-imagem').value;
+            }
+        });
+        
+        const sucesso = await salvarConfiguracoes(configParaSalvar);
+        if (sucesso) {
+            painel.container.classList.remove('aberto');
+        } else {
+            painel.status.textContent = 'Erro ao salvar. Tente novamente.';
+            painel.status.className = 'painel-status erro';
+            setTimeout(() => { painel.status.style.display = 'none'; }, 5000);
+        }
+    }
+
+    // --- EVENT LISTENERS ---
+    document.getElementById('abrirPainelFooter').addEventListener('click', abrirPainelConfig);
+    painel.fechar.addEventListener('click', () => painel.container.classList.remove('aberto'));
+    painel.salvar.addEventListener('click', salvarAlteracoesDoPainel);
+    painel.btnCancelarSenha.addEventListener('click', fecharModalSenha);
+    painel.btnConfirmarSenha.addEventListener('click', () => {
+        const email = painel.inputEmail.value;
+        const senha = painel.inputSenha.value;
+        fazerLogin(email, senha);
+    });
+
+    document.getElementById('btnRegistrar').addEventListener('click', () => {
+        const email = painel.inputEmail.value;
+        const senha = painel.inputSenha.value;
+        if (!email || !senha) {
+            painel.mensagemErroSenha.textContent = 'Por favor, preencha todos os campos.';
+            return;
+        }
+        fazerRegistro(email, senha);
+    });
+
+    document.getElementById('btnRecuperarSenha').addEventListener('click', () => {
+        const email = painel.inputEmail.value;
+        if (!email) {
+            painel.mensagemErroSenha.textContent = 'Por favor, digite seu email para recuperar a senha.';
+            return;
+        }
+        recuperarSenha(email);
+    });
+
+    painel.inputEmail.addEventListener('keyup', e => {
+        if (e.key === 'Enter') {
+            const email = painel.inputEmail.value;
+            const senha = painel.inputSenha.value;
+            fazerLogin(email, senha);
+        }
+    });
+
+    painel.inputSenha.addEventListener('keyup', e => {
+        if (e.key === 'Enter') {
+            const email = painel.inputEmail.value;
+            const senha = painel.inputSenha.value;
+            fazerLogin(email, senha);
+        }
+    });
+
+    // Observador de estado de autenticação
+    onAuthStateChanged(auth, (user) => {
+        atualizarInterfaceAutenticacao(user);
+    });
+
+    // Adicionar preview em tempo real para alterações de cores
+    painel.corFundo1.addEventListener('input', atualizarCoresTempoReal);
+    painel.corFundo2.addEventListener('input', atualizarCoresTempoReal);
+    painel.corFundo3.addEventListener('input', atualizarCoresTempoReal);
+    painel.corTextoPrincipal.addEventListener('input', atualizarCoresTempoReal);
+    painel.corTextoSecundario.addEventListener('input', atualizarCoresTempoReal);
+    painel.corCard.addEventListener('input', atualizarCoresTempoReal);
+    
+    // Preview em tempo real para alterações do perfil
+    painel.urlFotoPerfil.addEventListener('input', atualizarPerfilTempoReal);
+    painel.inputTituloPerfil.addEventListener('input', atualizarPerfilTempoReal);
+    painel.inputSubtituloPerfil.addEventListener('input', atualizarPerfilTempoReal);
+
+    painel.btnAdicionarLink.addEventListener('click', () => {
+        configParaSalvar.links.push({ id: Date.now(), url: '#', imagem: 'https://via.placeholder.com/150', titulo: 'Novo Link', subtitulo: 'Nova descrição' });
+        renderizarEditorLinks(configParaSalvar.links);
+    });
+    painel.editorLinksContainer.addEventListener('click', e => {
+        if (e.target.classList.contains('btn-remover')) {
+            const editorDiv = e.target.closest('.editor-link');
+            configParaSalvar.links = configParaSalvar.links.filter(l => l.id !== Number(editorDiv.dataset.id));
+            renderizarEditorLinks(configParaSalvar.links);
+        }
+    });
+
+    // Lógica de Upload e Compressão de Imagem
+    function comprimirEConverterParaBase64(file, callback) {
+        const MAX_LARGURA = 800; const MAX_ALTURA = 800; const reader = new FileReader();
+        reader.onload = (e) => { const img = new Image(); img.onload = () => { let canvas = document.createElement('canvas'); let ctx = canvas.getContext('2d'); let largura = img.width; let altura = img.height; if (largura > altura) { if (largura > MAX_LARGURA) { altura *= MAX_LARGURA / largura; largura = MAX_LARGURA; } } else { if (altura > MAX_ALTURA) { largura *= MAX_ALTURA / altura; altura = MAX_ALTURA; } } canvas.width = largura; canvas.height = altura; ctx.drawImage(img, 0, 0, largura, altura); callback(canvas.toDataURL('image/jpeg', 0.8)); }; img.src = e.target.result; }; reader.readAsDataURL(file);
+    }
+    
+    painel.uploadFotoPerfil.addEventListener('change', e => { 
+        if (e.target.files && e.target.files[0]) { 
+            comprimirEConverterParaBase64(e.target.files[0], base64 => { 
+                painel.urlFotoPerfil.value = base64; 
+                atualizarPerfilTempoReal(); // Atualizar em tempo real após o upload
+            }); 
+        } 
+    });
+    painel.editorLinksContainer.addEventListener('change', e => {
+        if (e.target.classList.contains('input-link-upload') && e.target.files && e.target.files[0]) {
+            const inputUrl = e.target.parentElement.querySelector('.input-link-imagem');
+            comprimirEConverterParaBase64(e.target.files[0], base64 => { inputUrl.value = base64; });
+        }
+    });
+
+    // --- FUNÇÕES UTILITÁRIAS ---
+    function hexToRgba(hex, alpha) {
+        let r = 0, g = 0, b = 0; if (hex.length === 4) { r = "0x" + hex[1] + hex[1]; g = "0x" + hex[2] + hex[2]; b = "0x" + hex[3] + hex[3]; } else if (hex.length === 7) { r = "0x" + hex[1] + hex[2]; g = "0x" + hex[3] + hex[4]; b = "0x" + hex[5] + hex[6]; } return `rgba(${+r},${+g},${+b},${alpha})`;
+    }
+    function rgbaToHex(rgba) {
+        if (!rgba || !rgba.startsWith('rgba')) return rgba; const parts = rgba.substring(rgba.indexOf('(')).split(','); const r = parseInt(parts[0].substring(1).trim(), 10); const g = parseInt(parts[1].trim(), 10); const b = parseInt(parts[2].trim(), 10); return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+    }
+
+    // --- INICIALIZAR SELETORES DE COR ---
+    let pickrs = {};
+    
+    function inicializarSeletoresDeCor() {
+        // Configuração comum para todos os seletores
+        const pickrConfig = {
+            el: null,
+            theme: 'nano',
+            lockOpacity: true,
+            defaultRepresentation: 'HEX',
+            swatches: [
+                '#0f2027', '#203a43', '#2c5364', // Blues escuros (padrão)
+                '#2c3e50', '#4ca1af', // Outro azul
+                '#8e44ad', '#9b59b6', // Roxos
+                '#e74c3c', '#c0392b', // Vermelhos
+                '#f1c40f', '#f39c12', // Amarelos
+                '#2ecc71', '#27ae60', // Verdes
+                '#3498db', '#2980b9', // Azuis
+                '#1e1e1e', '#333333', '#777777', '#ffffff' // Tons de cinza
+            ],
+            components: {
+                preview: true,
+                opacity: false,
+                hue: true,
+                interaction: {
+                    hex: true,
+                    rgba: true,
+                    input: true,
+                    save: true,
+                    clear: false
+                }
+            }
+        };
+
+        // Inicializar cada seletor de cor
+        const pickerElements = [
+            { id: 'picker-fundo1', inputId: 'corFundo1' },
+            { id: 'picker-fundo2', inputId: 'corFundo2' },
+            { id: 'picker-fundo3', inputId: 'corFundo3' },
+            { id: 'picker-texto1', inputId: 'corTextoPrincipal' },
+            { id: 'picker-texto2', inputId: 'corTextoSecundario' },
+            { id: 'picker-card', inputId: 'corCard' }
+        ];
+
+        pickerElements.forEach(({id, inputId}) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            
+            const config = {...pickrConfig, el: `#${id}`};
+            const inputElement = document.getElementById(inputId);
+            
+            const pickr = Pickr.create(config);
+            pickrs[inputId] = pickr;
+            
+            // Definir a cor inicial do Pickr baseado no input padrão
+            pickr.setColor(inputElement.value);
+            
+            // Atualizar a pré-visualização
+            el.querySelector('.color-preview').style.backgroundColor = inputElement.value;
+            
+            // Quando a cor é alterada no Pickr
+            pickr.on('change', (color) => {
+                const hexColor = color.toHEXA().toString();
+                inputElement.value = hexColor;
+                el.querySelector('.color-preview').style.backgroundColor = hexColor;
+                
+                // Disparar o evento input para acionar a atualização em tempo real
+                const event = new Event('input', { bubbles: true });
+                inputElement.dispatchEvent(event);
+            });
+            
+            // Quando o input padrão muda (para manter tudo sincronizado)
+            inputElement.addEventListener('input', () => {
+                pickr.setColor(inputElement.value);
+                el.querySelector('.color-preview').style.backgroundColor = inputElement.value;
+            });
+        });
+    }
+    
+    // --- INICIALIZAÇÃO ---
+    inicializarFirebase();
+</script>
+
+</body>
+</html>
